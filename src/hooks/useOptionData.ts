@@ -2,11 +2,16 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabaseClient'
 import type { OptionTick } from '../types'
 
-const MAX_POINTS = 200
+// 0 (or not set) = no limitation, keep every tick that arrives.
+// A hard safety ceiling still applies so the browser tab doesn't run out of
+// memory on a multi-day session — bump SAFETY_CEILING if you need more.
+const SAFETY_CEILING = 50000
 
-export function useOptionData(symbol: string) {
+export function useOptionData(symbol: string, maxPoints = 0) {
   const [ticks, setTicks] = useState<OptionTick[]>([])
   const [connected, setConnected] = useState(false)
+
+  const cap = maxPoints > 0 ? maxPoints : SAFETY_CEILING
 
   useEffect(() => {
     let mounted = true
@@ -17,7 +22,7 @@ export function useOptionData(symbol: string) {
         .select('*')
         .eq('symbol', symbol)
         .order('created_at', { ascending: true })
-        .limit(MAX_POINTS)
+        .limit(cap)
 
       if (!error && data && mounted) {
         setTicks(data as OptionTick[])
@@ -39,7 +44,7 @@ export function useOptionData(symbol: string) {
         (payload) => {
           setTicks((prev) => {
             const next = [...prev, payload.new as OptionTick]
-            return next.length > MAX_POINTS ? next.slice(-MAX_POINTS) : next
+            return next.length > cap ? next.slice(-cap) : next
           })
         }
       )
@@ -51,7 +56,7 @@ export function useOptionData(symbol: string) {
       mounted = false
       supabase.removeChannel(channel)
     }
-  }, [symbol])
+  }, [symbol, cap])
 
   const latest = ticks.length > 0 ? ticks[ticks.length - 1] : null
 
