@@ -17,9 +17,9 @@ const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
 
-const UNDERLYINGS: Record<string, { dhanScrip: number; dhanSeg: string; angelSymbol: string }> = {
-  NIFTY: { dhanScrip: 13, dhanSeg: 'IDX_I', angelSymbol: 'NIFTY' },
-  BANKNIFTY: { dhanScrip: 25, dhanSeg: 'IDX_I', angelSymbol: 'BANKNIFTY' }
+const UNDERLYINGS: Record<string, { dhanScrip: number; dhanSeg: string; angelSymbol: string; upstoxKey: string }> = {
+  NIFTY: { dhanScrip: 13, dhanSeg: 'IDX_I', angelSymbol: 'NIFTY', upstoxKey: 'NSE_INDEX|Nifty 50' },
+  BANKNIFTY: { dhanScrip: 25, dhanSeg: 'IDX_I', angelSymbol: 'BANKNIFTY', upstoxKey: 'NSE_INDEX|Nifty Bank' }
 }
 
 const VEGA_DIFF_THRESHOLD = 2.0
@@ -178,6 +178,61 @@ async function fetchFromAngelOne(symbol: string, settings: any) {
   }
 }
 
+// ---------- UPSTOX ----------
+// Upstox v2 has a proper option-chain endpoint that returns option_greeks
+// (including vega) per strike directly, similar to Dhan — no manual
+// Black-Scholes needed, and no scrip-master lookup needed.
+async function fetchFromUpstox(symbol: string, settings: any) {
+  const config = UNDERLYINGS[symbol]
+  const token = settings.upstox_access_token
+  if (!token) throw new Error('Upstox access token missing in broker_settings')
+
+  const headers = { Accept: 'application/json', Authorization: `Bearer ${token}` }
+
+  // 1. Nearest expiry via the contracts endpoint
+  const contractsRes = await fetch(
+    `https://api.upstox.com/v2/option/contract?instrument_key=${encodeURIComponent(config.upstoxKey)}`,
+    { headers }
+  )
+  const contractsJson = await contractsRes.json()
+  if (contractsJson.status !== 'success') throw new Error('Upstox contracts error: ' + JSON.stringify(contractsJson))
+  const expiries: string[] = Array.from(new Set(contractsJson.data.map((c: any) => c.expiry))).sort()
+  const expiry = expiries[0]
+
+  // 2. Option chain with greeks for that expiry
+  const chainRes = await fetch(
+    `https://api.upstox.com/v2/option/chain?instrument_key=${encodeURIComponent(config.upstoxKey)}&expiry_date=${expiry}`,
+    { headers }
+  )
+  const chainJson = await chainRes.json()
+  if (chainJson.status !== 'success') throw new Error('Upstox chain error: ' + JSON.stringify(chainJson))
+
+  const rows: any[] = chainJson.data
+  const spot = rows[0]?.underlying_spot_price as number
+
+  let nearest = rows[0]
+  let bestDiff = Infinity
+  for (const r of rows) {
+    const diff = Math.abs(r.strike_price - spot)
+    if (diff < bestDiff) {
+      bestDiff = diff
+      nearest = r
+    }
+  }
+
+  return {
+    spot,
+    strike: nearest.strike_price as number,
+    expiry,
+    ceLtp: nearest.call_options?.market_data?.ltp ?? 0,
+    peLtp: nearest.put_options?.market_data?.ltp ?? 0,
+    ceIv: nearest.call_options?.option_greeks?.iv ?? 0,
+    peIv: nearest.put_options?.option_greeks?.iv ?? 0,
+    ceVega: nearest.call_options?.option_greeks?.vega ?? 0,
+    peVega: nearest.put_options?.option_greeks?.vega ?? 0
+  }
+}
+
 async function generateTOTP(secret: string): Promise<string> {
   // Minimal TOTP (RFC 6238) implementation using Web Crypto (Deno-native).
   const key = base32Decode(secret)
@@ -225,7 +280,11 @@ Deno.serve(async (req) => {
     if (!settings) throw new Error('No active broker configured in broker_settings')
 
     const result =
-      settings.broker === 'DHAN' ? await fetchFromDhan(symbol, settings) : await fetchFromAngelOne(symbol, settings)
+      settings.broker === 'DHAN'
+        ? await fetchFromDhan(symbol, settings)
+        : settings.broker === 'UPSTOX'
+        ? await fetchFromUpstox(symbol, settings)
+        : await fetchFromAngelOne(symbol, settings)
 
     const vegaDiff = Number((result.ceVega - result.peVega).toFixed(4))
     const sentiment = vegaDiff > VEGA_DIFF_THRESHOLD ? 'BULLISH' : vegaDiff < -VEGA_DIFF_THRESHOLD ? 'BEARISH' : 'NEUTRAL'

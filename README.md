@@ -9,21 +9,33 @@
   hai. Settings mein "Max Points" ko `0` set karo = unlimited (bas ek internal 50,000-point safety
   ceiling hai taaki browser tab crash na ho).
 - **Settings screen (⚙ button, top-right)**:
-  - Dhan **aur** Angel One dono ke API keys add/edit kar sakte ho.
-  - "Use Dhan" / "Use Angel One" button se turant active broker switch ho jata hai — **koi
+  - Dhan, Angel One, **aur Upstox** — teeno ke API keys ek jagah add/edit kar sakte ho.
+  - "Use Dhan" / "Use Angel One" / "Use Upstox" button se turant active broker switch ho jata hai — **koi
     redeploy nahi chahiye**, kyunki edge function har poll pe `broker_settings` table se live keys
     padhta hai.
   - Developer Mode toggle — on karne par Dashboard ke neeche raw latest tick JSON aur loaded point
     count dikhta hai.
   - Poll interval aur max points bhi yahi se configure hote hain.
 
+## Real-time + Historical Data (Upstox)
+
+- **Real-time**: existing `fetch-market-data` function pe UPSTOX ko active broker banao — vo har poll pe fresh spot/vega/sentiment/signal insert karta hai (usi jagah candle-close data bhi aa jayega).
+- **Historical + preset timeframes**: naya `fetch-historical` edge function Upstox ke history/intraday candle API ko proxy karta hai. Deploy karo:
+  ```
+  supabase functions deploy fetch-historical
+  ```
+- Dashboard ke top panel mein ab **5 Min / 15 Min / 1 Hour / 1 Day** buttons hain (candlestick chart, har 30 sec pe auto-refresh).
+- **Important limitation**: Upstox v2 sirf `1minute`, `day`, `week`, `month` candles deta hai — koi native 5min/15min/1hour endpoint nahi hai. Isliye 5min/15min/1hour Frontend mein `1minute` candles ko client-side aggregate (bucket) karke banaye jaate hain (`src/lib/candleAggregation.ts`), bilkul waise hi jaise TradingView/Zerodha Kite bhi karte hain jab broker native interval na de.
+- Upstox access token **daily expire** hota hai (raat 3:30 AM tak valid) — Settings se roz naya token paste karna hoga jab tak aap OAuth auto-refresh flow add nahi karte.
+
+
 ## Setup in short
 
-1. `supabase/migrations/0001_init.sql` aur `0002_broker_settings.sql` dono run karo (Supabase SQL
-   editor ya `supabase db push`).
-2. Deploy karo: `supabase functions deploy fetch-market-data`
+1. `supabase/migrations/0001_init.sql`, `0002_broker_settings.sql`, `0003_upstox.sql` teeno run karo
+   (Supabase SQL editor ya `supabase db push`).
+2. Deploy karo: `supabase functions deploy fetch-market-data` aur `supabase functions deploy fetch-historical`
    (secrets sirf `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` chahiye — broker keys ab DB mein hain).
-3. App kholo → Settings → Dhan ya Angel One ka client ID / token daalo → "Use ..." dabao.
+3. App kholo → Settings → Upstox tab → API Key, API Secret, Access Token daalo → "Use Upstox" dabao.
 4. External cron (cron-job.org / GitHub Actions) se har few seconds pe hit karo:
    `https://<project>.functions.supabase.co/fetch-market-data?symbol=NIFTY`
 

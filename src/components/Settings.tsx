@@ -116,8 +116,9 @@ export default function Settings({ onClose }: { onClose: () => void }) {
         </div>
 
         <div style={{ display: 'flex', gap: 8, marginBottom: 18 }}>
-          {(['DHAN', 'ANGELONE'] as BrokerName[]).map((b) => {
+          {(['DHAN', 'ANGELONE', 'UPSTOX'] as BrokerName[]).map((b) => {
             const row = rows.find((r) => r.broker === b)
+            const brokerLabel = b === 'DHAN' ? 'Dhan' : b === 'ANGELONE' ? 'Angel One' : 'Upstox'
             return (
               <button
                 key={b}
@@ -134,7 +135,7 @@ export default function Settings({ onClose }: { onClose: () => void }) {
                   position: 'relative'
                 }}
               >
-                {b === 'DHAN' ? 'Dhan' : 'Angel One'}
+                {brokerLabel}
                 {row?.is_active && (
                   <span
                     style={{
@@ -198,6 +199,33 @@ export default function Settings({ onClose }: { onClose: () => void }) {
                   label="Access Token (auto-filled after login, optional to paste manually)"
                   value={current.angel_access_token ?? ''}
                   onChange={(v) => updateField('angel_access_token', v)}
+                  type="password"
+                />
+              </>
+            )}
+
+            {tab === 'UPSTOX' && (
+              <>
+                <Field
+                  label="Upstox API Key (Client ID)"
+                  value={current.upstox_api_key ?? ''}
+                  onChange={(v) => updateField('upstox_api_key', v)}
+                />
+                <Field
+                  label="Upstox API Secret"
+                  value={current.upstox_api_secret ?? ''}
+                  onChange={(v) => updateField('upstox_api_secret', v)}
+                  type="password"
+                />
+                <Field
+                  label="Redirect URI (as registered on Upstox developer app)"
+                  value={current.upstox_redirect_uri ?? ''}
+                  onChange={(v) => updateField('upstox_redirect_uri', v)}
+                />
+                <Field
+                  label="Access Token (from OAuth login — paste daily, valid till 3:30 AM next day)"
+                  value={current.upstox_access_token ?? ''}
+                  onChange={(v) => updateField('upstox_access_token', v)}
                   type="password"
                 />
               </>
@@ -267,7 +295,7 @@ export default function Settings({ onClose }: { onClose: () => void }) {
                   cursor: current.is_active ? 'default' : 'pointer'
                 }}
               >
-                {current.is_active ? 'Already Active' : `Use ${tab === 'DHAN' ? 'Dhan' : 'Angel One'}`}
+                {current.is_active ? 'Already Active' : `Use ${tab === 'DHAN' ? 'Dhan' : tab === 'ANGELONE' ? 'Angel One' : 'Upstox'}`}
               </button>
             </div>
             {savedMsg && <div style={{ marginTop: 10, fontSize: 12, color: '#8892a6' }}>{savedMsg}</div>}

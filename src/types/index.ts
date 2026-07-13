@@ -1,4 +1,4 @@
-export type BrokerName = 'DHAN' | 'ANGELONE'
+export type BrokerName = 'DHAN' | 'ANGELONE' | 'UPSTOX'
 
 export interface BrokerSettings {
   id: number
@@ -11,6 +11,10 @@ export interface BrokerSettings {
   angel_password: string | null
   angel_totp_secret: string | null
   angel_access_token: string | null
+  upstox_api_key: string | null
+  upstox_api_secret: string | null
+  upstox_access_token: string | null
+  upstox_redirect_uri: string | null
   developer_mode: boolean
   poll_interval_seconds: number
   max_points: number // 0 = unlimited

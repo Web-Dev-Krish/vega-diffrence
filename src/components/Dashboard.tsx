@@ -1,12 +1,16 @@
 import { useState } from 'react'
 import { useOptionData } from '../hooks/useOptionData'
 import { useActiveBrokerSettings } from '../hooks/useActiveBrokerSettings'
+import { useHistoricalCandles } from '../hooks/useHistoricalCandles'
+import type { Timeframe } from '../lib/candleAggregation'
 import StatCards from './StatCards'
 import VegaChart from './VegaChart'
 import VwapChart from './VwapChart'
 import SentimentChart from './SentimentChart'
 import AlertsLog from './AlertsLog'
 import Settings from './Settings'
+import CandleChart from './CandleChart'
+import TimeframeSelector from './TimeframeSelector'
 
 const panelStyle: React.CSSProperties = {
   background: '#0f131b',
@@ -20,8 +24,10 @@ const panelTitleStyle: React.CSSProperties = { margin: '0 0 10px', fontSize: 14,
 export default function Dashboard() {
   const [symbol, setSymbol] = useState('NIFTY')
   const [showSettings, setShowSettings] = useState(false)
+  const [timeframe, setTimeframe] = useState<Timeframe>('5min')
   const brokerSettings = useActiveBrokerSettings()
   const { ticks, latest, connected } = useOptionData(symbol, brokerSettings?.max_points ?? 0)
+  const { candles, loading: candlesLoading, error: candlesError } = useHistoricalCandles(symbol, timeframe)
 
   return (
     <div style={{ padding: 24, fontFamily: 'Inter, system-ui, sans-serif', color: '#e5e8ef' }}>
@@ -50,7 +56,7 @@ export default function Dashboard() {
                 padding: '3px 8px'
               }}
             >
-              {brokerSettings.broker === 'DHAN' ? 'Dhan' : 'Angel One'} active
+              {brokerSettings.broker === 'DHAN' ? 'Dhan' : brokerSettings.broker === 'ANGELONE' ? 'Angel One' : 'Upstox'} active
             </span>
           )}
 
@@ -89,6 +95,22 @@ export default function Dashboard() {
       <StatCards latest={latest} />
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 20 }}>
+        <div style={panelStyle}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10, flexWrap: 'wrap', gap: 10 }}>
+            <h3 style={{ margin: 0, fontSize: 14, color: '#8892a6' }}>
+              {symbol} Price — {timeframe} (Upstox)
+            </h3>
+            <TimeframeSelector value={timeframe} onChange={setTimeframe} />
+          </div>
+          {candlesLoading && <div style={{ color: '#8892a6', fontSize: 13 }}>Candles load ho rahe hain...</div>}
+          {candlesError && (
+            <div style={{ color: '#ef4444', fontSize: 12, marginBottom: 8 }}>
+              Historical data error: {candlesError}
+            </div>
+          )}
+          {!candlesLoading && !candlesError && <CandleChart candles={candles} />}
+        </div>
+
         <div style={panelStyle}>
           <h3 style={panelTitleStyle}>CE / PE Vega & Difference</h3>
           <VegaChart ticks={ticks} />
