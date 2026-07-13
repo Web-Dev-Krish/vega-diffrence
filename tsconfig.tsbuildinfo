@@ -1,0 +1,1 @@
+{"root":["./src/App.tsx","./src/main.tsx","./src/vite-env.d.ts","./src/components/Dashboard.tsx","./src/components/StatCards.tsx","./src/components/VegaChart.tsx","./src/components/VwapChart.tsx","./src/hooks/useOptionData.ts","./src/lib/blackScholes.ts","./src/lib/supabaseClient.ts","./src/types/index.ts"],"errors":true,"version":"6.0.3"}
