@@ -1,4 +1,37 @@
-# Vega Sentiment Dashboard (React + Vite + TS + Supabase + Dhan API)
+# Vega Sentiment Dashboard
+
+## Naye Features (added)
+
+- **Sab values graph mein**: CE Vega, PE Vega, Vega Diff (line chart), Spot vs VWAP + signals
+  (composed chart), aur ab **Sentiment Trend** (area chart) bhi — sab real-time update hote hain.
+- **Buy/Sell Alerts log**: Right panel mein har BUY/SELL signal ka scrollable history.
+- **Bina limitation, real-time**: `useOptionData` hook se hardcoded 200-point cap hata diya gaya
+  hai. Settings mein "Max Points" ko `0` set karo = unlimited (bas ek internal 50,000-point safety
+  ceiling hai taaki browser tab crash na ho).
+- **Settings screen (⚙ button, top-right)**:
+  - Dhan **aur** Angel One dono ke API keys add/edit kar sakte ho.
+  - "Use Dhan" / "Use Angel One" button se turant active broker switch ho jata hai — **koi
+    redeploy nahi chahiye**, kyunki edge function har poll pe `broker_settings` table se live keys
+    padhta hai.
+  - Developer Mode toggle — on karne par Dashboard ke neeche raw latest tick JSON aur loaded point
+    count dikhta hai.
+  - Poll interval aur max points bhi yahi se configure hote hain.
+
+## Setup in short
+
+1. `supabase/migrations/0001_init.sql` aur `0002_broker_settings.sql` dono run karo (Supabase SQL
+   editor ya `supabase db push`).
+2. Deploy karo: `supabase functions deploy fetch-market-data`
+   (secrets sirf `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` chahiye — broker keys ab DB mein hain).
+3. App kholo → Settings → Dhan ya Angel One ka client ID / token daalo → "Use ..." dabao.
+4. External cron (cron-job.org / GitHub Actions) se har few seconds pe hit karo:
+   `https://<project>.functions.supabase.co/fetch-market-data?symbol=NIFTY`
+
+Angel One ka option-chain endpoint Dhan jaisa direct nahi hai — abhi placeholder IV se Vega nikalta
+hai. Poore automation ke liye Angel One ka scrip-master JSON download karke nearest-strike CE/PE
+tokens map karne wala step add karna hoga (`fetch-market-data/index.ts` mein comment ke saath
+jagah chhodi hai).
+ (React + Vite + TS + Supabase + Dhan API)
 
 Real-time CE/PE Vega, Vega Difference, Sentiment, Spot VWAP, Buy/Sell signals — charted.
 
