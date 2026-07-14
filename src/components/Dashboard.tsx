@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useOptionData } from '../hooks/useOptionData'
 import { useActiveBrokerSettings } from '../hooks/useActiveBrokerSettings'
 import { useHistoricalCandles } from '../hooks/useHistoricalCandles'
+import { usePollMarketData } from '../hooks/usePollMarketData'
 import type { Timeframe } from '../lib/candleAggregation'
 import StatCards from './StatCards'
 import VegaChart from './VegaChart'
@@ -28,6 +29,7 @@ export default function Dashboard() {
   const brokerSettings = useActiveBrokerSettings()
   const { ticks, latest, connected } = useOptionData(symbol, brokerSettings?.max_points ?? 0)
   const { candles, loading: candlesLoading, error: candlesError } = useHistoricalCandles(symbol, timeframe)
+  const { lastResult: pollResult, lastError: pollError } = usePollMarketData(symbol, brokerSettings)
 
   return (
     <div style={{ padding: 24, fontFamily: 'Inter, system-ui, sans-serif', color: '#e5e8ef' }}>
@@ -93,6 +95,32 @@ export default function Dashboard() {
       </div>
 
       <StatCards latest={latest} />
+
+      {pollError && (
+        <div
+          style={{
+            background: '#2a1418',
+            border: '1px solid #5c1f28',
+            color: '#f87171',
+            borderRadius: 10,
+            padding: '10px 14px',
+            fontSize: 13,
+            marginBottom: 16
+          }}
+        >
+          <strong>Live data fetch fail ho raha hai:</strong> {pollError}
+          <div style={{ color: '#c98a8a', fontSize: 12, marginTop: 4 }}>
+            Settings mein broker active hai ya nahi, aur uske keys sahi hain ya nahi check karo. Edge function
+            deploy hui hai ya nahi bhi confirm karo (<code>supabase functions deploy fetch-market-data</code>).
+          </div>
+        </div>
+      )}
+      {!pollError && brokerSettings?.developer_mode && pollResult && (
+        <div style={{ fontSize: 11, color: '#5a6274', marginBottom: 12 }}>
+          Last poll ✓ {pollResult.symbol} spot={pollResult.spot} sentiment={pollResult.sentiment} via{' '}
+          {pollResult.broker}
+        </div>
+      )}
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 20 }}>
         <div style={panelStyle}>
