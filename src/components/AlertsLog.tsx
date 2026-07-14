@@ -1,9 +1,5 @@
 import type { OptionTick } from '../types'
-
-function formatTime(ts: string) {
-  const d = new Date(ts)
-  return d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
-}
+import { formatMarketTime } from '../lib/marketTime'
 
 export default function AlertsLog({ ticks }: { ticks: OptionTick[] }) {
   const alerts = ticks.filter((t) => t.signal === 'BUY' || t.signal === 'SELL').slice(-100).reverse()
@@ -43,7 +39,7 @@ export default function AlertsLog({ ticks }: { ticks: OptionTick[] }) {
             <span style={{ color: '#e5e8ef' }}>{t.symbol}</span>
             <span style={{ color: '#8892a6' }}>@ {t.spot_price.toFixed(2)}</span>
           </div>
-          <div style={{ color: '#5a6274', fontSize: 12 }}>{formatTime(t.created_at)}</div>
+          <div style={{ color: '#5a6274', fontSize: 12 }}>{formatMarketTime(t.created_at)}</div>
         </div>
       ))}
     </div>

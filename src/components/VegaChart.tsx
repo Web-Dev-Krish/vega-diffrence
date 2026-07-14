@@ -10,11 +10,7 @@ import {
   Brush
 } from 'recharts'
 import type { OptionTick } from '../types'
-
-function formatTime(ts: string) {
-  const d = new Date(ts)
-  return d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
-}
+import { formatMarketTime } from '../lib/marketTime'
 
 // Explicit legend instead of Recharts' built-in <Legend/> — the built-in one
 // can render "undefined" in some data/prop combinations. This version can't.
@@ -38,7 +34,7 @@ function LegendRow() {
 
 export default function VegaChart({ ticks }: { ticks: OptionTick[] }) {
   const data = ticks.map((t) => ({
-    time: formatTime(t.created_at),
+    time: formatMarketTime(t.created_at),
     ceVega: t.ce_vega,
     peVega: t.pe_vega,
     vegaDiff: t.vega_diff

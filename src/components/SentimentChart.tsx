@@ -1,10 +1,6 @@
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ReferenceLine, Brush } from 'recharts'
 import type { OptionTick } from '../types'
-
-function formatTime(ts: string) {
-  const d = new Date(ts)
-  return d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
-}
+import { formatMarketTime } from '../lib/marketTime'
 
 function sentimentScore(s: OptionTick['sentiment']) {
   if (s === 'BULLISH') return 1
@@ -14,7 +10,7 @@ function sentimentScore(s: OptionTick['sentiment']) {
 
 export default function SentimentChart({ ticks }: { ticks: OptionTick[] }) {
   const data = ticks.map((t) => ({
-    time: formatTime(t.created_at),
+    time: formatMarketTime(t.created_at),
     score: sentimentScore(t.sentiment),
     sentiment: t.sentiment
   }))

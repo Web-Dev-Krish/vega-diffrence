@@ -1,10 +1,6 @@
 import { ResponsiveContainer, ComposedChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Brush } from 'recharts'
 import type { Candle } from '../lib/candleAggregation'
-
-function formatTime(ts: string) {
-  const d = new Date(ts)
-  return d.toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })
-}
+import { formatMarketDateTime } from '../lib/marketTime'
 
 // Recharts has no native candlestick type, so we draw one ourselves: a thin
 // wick (high→low) plus a filled body (open→close), colored green/red.
@@ -34,7 +30,7 @@ function CandleShape(props: any) {
 }
 
 export default function CandleChart({ candles }: { candles: Candle[] }) {
-  const data = candles.map((c) => ({ ...c, label: formatTime(c.time) }))
+  const data = candles.map((c) => ({ ...c, label: formatMarketDateTime(c.time) }))
 
   return (
     <div style={{ width: '100%', height: 380 }}>

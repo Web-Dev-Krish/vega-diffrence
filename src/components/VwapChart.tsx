@@ -10,11 +10,7 @@ import {
   Brush
 } from 'recharts'
 import type { OptionTick } from '../types'
-
-function formatTime(ts: string) {
-  const d = new Date(ts)
-  return d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
-}
+import { formatMarketTime } from '../lib/marketTime'
 
 function LegendRow() {
   const items = [
@@ -37,7 +33,7 @@ function LegendRow() {
 
 export default function VwapChart({ ticks }: { ticks: OptionTick[] }) {
   const data = ticks.map((t) => ({
-    time: formatTime(t.created_at),
+    time: formatMarketTime(t.created_at),
     spot: t.spot_price,
     vwap: t.spot_vwap,
     buy: t.signal === 'BUY' ? t.spot_price : null,

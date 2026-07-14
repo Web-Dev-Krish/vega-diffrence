@@ -220,6 +220,31 @@ async function fetchFromUpstox(symbol: string, settings: any) {
     }
   }
 
+  const ceGreeks = nearest.call_options?.option_greeks
+  const peGreeks = nearest.put_options?.option_greeks
+  const ceVega = ceGreeks?.vega
+  const peVega = peGreeks?.vega
+
+  // Vega for index options realistically sits well under a few hundred.
+  // If Upstox returns something absurd (missing greeks, a mis-shaped
+  // response, a stale/expired contract, etc.) fail loudly with the raw
+  // payload instead of silently writing garbage into option_ticks — that
+  // garbage is what was making the chart's Y-axis show ~1,000,000,000.
+  const SANE_VEGA_LIMIT = 1000
+  if (
+    typeof ceVega !== 'number' ||
+    typeof peVega !== 'number' ||
+    Math.abs(ceVega) > SANE_VEGA_LIMIT ||
+    Math.abs(peVega) > SANE_VEGA_LIMIT ||
+    Number.isNaN(ceVega) ||
+    Number.isNaN(peVega)
+  ) {
+    throw new Error(
+      `Upstox returned an implausible vega (ce=${ceVega}, pe=${peVega}) for strike ${nearest.strike_price}. ` +
+        `Raw greeks: call=${JSON.stringify(ceGreeks)} put=${JSON.stringify(peGreeks)}`
+    )
+  }
+
   return {
     spot,
     strike: nearest.strike_price as number,
@@ -228,8 +253,8 @@ async function fetchFromUpstox(symbol: string, settings: any) {
     peLtp: nearest.put_options?.market_data?.ltp ?? 0,
     ceIv: nearest.call_options?.option_greeks?.iv ?? 0,
     peIv: nearest.put_options?.option_greeks?.iv ?? 0,
-    ceVega: nearest.call_options?.option_greeks?.vega ?? 0,
-    peVega: nearest.put_options?.option_greeks?.vega ?? 0
+    ceVega,
+    peVega
   }
 }
 
