@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useOptionData } from '../hooks/useOptionData'
 import { useActiveBrokerSettings } from '../hooks/useActiveBrokerSettings'
-import { useHistoricalCandles } from '../hooks/useHistoricalCandles'
+import { useSpotCandles } from '../hooks/useSpotCandles'
 import { usePollMarketData } from '../hooks/usePollMarketData'
 import type { Timeframe } from '../lib/candleAggregation'
 import StatCards from './StatCards'
@@ -33,7 +33,7 @@ export default function Dashboard() {
   const cleanLatest =
     [...ticks].reverse().find((t) => Math.abs(t.ce_vega) <= SANE_VEGA_LIMIT && Math.abs(t.pe_vega) <= SANE_VEGA_LIMIT) ??
     null
-  const { candles, loading: candlesLoading, error: candlesError } = useHistoricalCandles(symbol, timeframe)
+  const { candles } = useSpotCandles(ticks, timeframe)
   const { lastResult: pollResult, lastError: pollError } = usePollMarketData(symbol, brokerSettings)
 
   return (
@@ -176,17 +176,16 @@ export default function Dashboard() {
         <div style={panelStyle}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10, flexWrap: 'wrap', gap: 10 }}>
             <h3 style={{ margin: 0, fontSize: 14, color: '#8892a6' }}>
-              {symbol} Price — {timeframe} (Upstox)
+              {symbol} Price — {timeframe} (live ticks se banaya gaya)
             </h3>
             <TimeframeSelector value={timeframe} onChange={setTimeframe} />
           </div>
-          {candlesLoading && <div style={{ color: '#8892a6', fontSize: 13 }}>Candles load ho rahe hain...</div>}
-          {candlesError && (
-            <div style={{ color: '#ef4444', fontSize: 12, marginBottom: 8 }}>
-              Historical data error: {candlesError}
+          {candles.length === 0 && (
+            <div style={{ color: '#8892a6', fontSize: 13 }}>
+              Abhi tak kaafi data nahi aaya — poller chalte rehne do, chart apne aap ban jayega.
             </div>
           )}
-          {!candlesLoading && !candlesError && <CandleChart candles={candles} />}
+          {candles.length > 0 && <CandleChart candles={candles} />}
         </div>
 
         <div style={panelStyle}>

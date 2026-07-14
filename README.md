@@ -19,14 +19,8 @@
 
 ## Real-time + Historical Data (Upstox)
 
-- **Real-time**: existing `fetch-market-data` function pe UPSTOX ko active broker banao — vo har poll pe fresh spot/vega/sentiment/signal insert karta hai (usi jagah candle-close data bhi aa jayega).
-- **Historical + preset timeframes**: naya `fetch-historical` edge function Upstox ke history/intraday candle API ko proxy karta hai. Deploy karo:
-  ```
-  supabase functions deploy fetch-historical
-  ```
-- Dashboard ke top panel mein ab **5 Min / 15 Min / 1 Hour / 1 Day** buttons hain (candlestick chart, har 30 sec pe auto-refresh).
-- **Important limitation**: Upstox v2 sirf `1minute`, `day`, `week`, `month` candles deta hai — koi native 5min/15min/1hour endpoint nahi hai. Isliye 5min/15min/1hour Frontend mein `1minute` candles ko client-side aggregate (bucket) karke banaye jaate hain (`src/lib/candleAggregation.ts`), bilkul waise hi jaise TradingView/Zerodha Kite bhi karte hain jab broker native interval na de.
-- Upstox access token **daily expire** hota hai (raat 3:30 AM tak valid) — Settings se roz naya token paste karna hoga jab tak aap OAuth auto-refresh flow add nahi karte.
+- **Real-time**: existing `fetch-market-data` function pe UPSTOX ko active broker banao — vo har poll pe fresh spot/vega/sentiment/signal insert karta hai. **Ab NIFTY aur BANKNIFTY dono hamesha background mein poll hote hain**, chahe UI mein koi bhi symbol select ho — pehle sirf selected symbol poll hota tha, isliye doosre symbol ka data (aur koi bhi fix) tab tak update nahi hota tha jab tak koi manually us tab pe switch na kare.
+- **Candlestick chart ab Upstox ke historical API se nahi, balki already-saved real-time ticks se banta hai** (`useSpotCandles` hook, `ticksToOneMinCandles` + `aggregateCandles` via `src/lib/candleAggregation.ts`). Isse ek extra API call/failure point hat gaya — trade-off ye hai ki chart sirf tab se history dikhayega jab se poller chal raha hai, Upstox ke pure multi-day history se nahi. Purana `fetch-historical` function + `useHistoricalCandles` hook code mein reference ke liye chhoda gaya hai agar kabhi wapas chahiye ho.
 
 
 ## Setup in short

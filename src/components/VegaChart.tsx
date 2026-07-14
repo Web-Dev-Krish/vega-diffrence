@@ -39,24 +39,51 @@ function LegendRow() {
 const SANE_VEGA_LIMIT = 1000
 
 export default function VegaChart({ ticks }: { ticks: OptionTick[] }) {
-  const clean = ticks.filter(
-    (t) => Math.abs(t.ce_vega) <= SANE_VEGA_LIMIT && Math.abs(t.pe_vega) <= SANE_VEGA_LIMIT
+  // Postgres `numeric` columns come back from supabase-js as STRINGS (to
+  // avoid JS float rounding), not numbers. Coerce explicitly — without this,
+  // filtering/min/max could silently behave wrong depending on row shape.
+  const numeric = ticks.map((t) => ({
+    time: t.created_at,
+    ceVega: Number(t.ce_vega),
+    peVega: Number(t.pe_vega),
+    vegaDiff: Number(t.vega_diff)
+  }))
+
+  const clean = numeric.filter(
+    (t) =>
+      Number.isFinite(t.ceVega) &&
+      Number.isFinite(t.peVega) &&
+      Math.abs(t.ceVega) <= SANE_VEGA_LIMIT &&
+      Math.abs(t.peVega) <= SANE_VEGA_LIMIT
   )
-  const droppedCount = ticks.length - clean.length
+  const droppedCount = numeric.length - clean.length
 
   const data = clean.map((t) => ({
-    time: formatMarketTime(t.created_at),
-    ceVega: t.ce_vega,
-    peVega: t.pe_vega,
-    vegaDiff: t.vega_diff
+    time: formatMarketTime(t.time),
+    ceVega: t.ceVega,
+    peVega: t.peVega,
+    vegaDiff: t.vegaDiff
   }))
 
   // Tight, padded domain (instead of a wide default range) so small
   // real moves are actually visible instead of looking like a flat line.
-  const allValues = data.flatMap((d) => [d.ceVega, d.peVega, d.vegaDiff]).filter((v) => v != null) as number[]
+  const allValues = data.flatMap((d) => [d.ceVega, d.peVega, d.vegaDiff]).filter((v) => Number.isFinite(v))
   const min = allValues.length ? Math.min(...allValues) : -1
   const max = allValues.length ? Math.max(...allValues) : 1
   const pad = Math.max((max - min) * 0.15, 0.5)
+
+  if (data.length === 0) {
+    return (
+      <div style={{ width: '100%' }}>
+        <LegendRow />
+        <div style={{ color: '#8892a6', fontSize: 13, padding: '30px 0', textAlign: 'center' }}>
+          {droppedCount > 0
+            ? `Is symbol ke saare ${droppedCount} loaded point corrupt (>1000 vega) nikle — nayi clean ticks aane ka wait karo, ya check karo ki edge function ka naya (validated) version is symbol ke liye deploy hua hai ya nahi.`
+            : 'Abhi data ka wait ho raha hai...'}
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div style={{ width: '100%' }}>
