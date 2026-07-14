@@ -1,4 +1,4 @@
-import { ResponsiveContainer, ComposedChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts'
+import { ResponsiveContainer, ComposedChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Brush } from 'recharts'
 import type { Candle } from '../lib/candleAggregation'
 
 function formatTime(ts: string) {
@@ -52,6 +52,9 @@ export default function CandleChart({ candles }: { candles: Candle[] }) {
           />
           {/* invisible bar just to give the custom shape access to x/width/yAxis */}
           <Bar dataKey="high" shape={<CandleShape />} isAnimationActive={false} />
+          {data.length > 15 && (
+            <Brush dataKey="label" height={24} stroke="#38bdf8" fill="#0f131b" travellerWidth={8} tickFormatter={() => ''} />
+          )}
         </ComposedChart>
       </ResponsiveContainer>
     </div>

@@ -1,4 +1,4 @@
-import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ReferenceLine } from 'recharts'
+import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ReferenceLine, Brush } from 'recharts'
 import type { OptionTick } from '../types'
 
 function formatTime(ts: string) {
@@ -44,7 +44,10 @@ export default function SentimentChart({ ticks }: { ticks: OptionTick[] }) {
             formatter={(_value: number, _name: string, props: any) => [props.payload.sentiment, 'Sentiment']}
           />
           <ReferenceLine y={0} stroke="#3a4152" />
-          <Area type="stepAfter" dataKey="score" stroke="#38bdf8" fill="url(#sentimentFill)" strokeWidth={2} />
+          <Area type="stepAfter" dataKey="score" stroke="#38bdf8" fill="url(#sentimentFill)" strokeWidth={2} isAnimationActive={false} />
+          {data.length > 10 && (
+            <Brush dataKey="time" height={20} stroke="#38bdf8" fill="#0f131b" travellerWidth={8} tickFormatter={() => ''} />
+          )}
         </AreaChart>
       </ResponsiveContainer>
     </div>

@@ -25,6 +25,7 @@ const panelTitleStyle: React.CSSProperties = { margin: '0 0 10px', fontSize: 14,
 export default function Dashboard() {
   const [symbol, setSymbol] = useState('NIFTY')
   const [showSettings, setShowSettings] = useState(false)
+  const [errorMinimized, setErrorMinimized] = useState(false)
   const [timeframe, setTimeframe] = useState<Timeframe>('5min')
   const brokerSettings = useActiveBrokerSettings()
   const { ticks, latest, connected } = useOptionData(symbol, brokerSettings?.max_points ?? 0)
@@ -96,7 +97,7 @@ export default function Dashboard() {
 
       <StatCards latest={latest} />
 
-      {pollError && (
+      {pollError && !errorMinimized && (
         <div
           style={{
             background: '#2a1418',
@@ -105,14 +106,58 @@ export default function Dashboard() {
             borderRadius: 10,
             padding: '10px 14px',
             fontSize: 13,
-            marginBottom: 16
+            marginBottom: 16,
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'flex-start',
+            gap: 10
           }}
         >
-          <strong>Live data fetch fail ho raha hai:</strong> {pollError}
-          <div style={{ color: '#c98a8a', fontSize: 12, marginTop: 4 }}>
-            Settings mein broker active hai ya nahi, aur uske keys sahi hain ya nahi check karo. Edge function
-            deploy hui hai ya nahi bhi confirm karo (<code>supabase functions deploy fetch-market-data</code>).
+          <div>
+            <strong>Live data fetch fail ho raha hai:</strong> {pollError}
+            <div style={{ color: '#c98a8a', fontSize: 12, marginTop: 4 }}>
+              Settings mein broker active hai ya nahi, aur uske keys sahi hain ya nahi check karo. Edge function
+              deploy hui hai ya nahi bhi confirm karo (<code>supabase functions deploy fetch-market-data</code>).
+            </div>
           </div>
+          <button
+            onClick={() => setErrorMinimized(true)}
+            title="Minimize"
+            style={{
+              background: 'transparent',
+              border: '1px solid #5c1f28',
+              color: '#f87171',
+              borderRadius: 6,
+              width: 24,
+              height: 24,
+              flexShrink: 0,
+              cursor: 'pointer',
+              fontSize: 14,
+              lineHeight: 1
+            }}
+          >
+            ✕
+          </button>
+        </div>
+      )}
+      {pollError && errorMinimized && (
+        <div
+          onClick={() => setErrorMinimized(false)}
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
+            background: '#2a1418',
+            border: '1px solid #5c1f28',
+            color: '#f87171',
+            borderRadius: 20,
+            padding: '4px 12px',
+            fontSize: 12,
+            marginBottom: 16,
+            cursor: 'pointer'
+          }}
+        >
+          ⚠ Live data error — dobara dekhne ke liye click karo
         </div>
       )}
       {!pollError && brokerSettings?.developer_mode && pollResult && (
@@ -121,6 +166,7 @@ export default function Dashboard() {
           {pollResult.broker}
         </div>
       )}
+
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 20 }}>
         <div style={panelStyle}>
