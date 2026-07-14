@@ -29,6 +29,10 @@ export default function Dashboard() {
   const [timeframe, setTimeframe] = useState<Timeframe>('5min')
   const brokerSettings = useActiveBrokerSettings()
   const { ticks, latest, connected } = useOptionData(symbol, brokerSettings?.max_points ?? 0)
+  const SANE_VEGA_LIMIT = 1000
+  const cleanLatest =
+    [...ticks].reverse().find((t) => Math.abs(t.ce_vega) <= SANE_VEGA_LIMIT && Math.abs(t.pe_vega) <= SANE_VEGA_LIMIT) ??
+    null
   const { candles, loading: candlesLoading, error: candlesError } = useHistoricalCandles(symbol, timeframe)
   const { lastResult: pollResult, lastError: pollError } = usePollMarketData(symbol, brokerSettings)
 
@@ -95,7 +99,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <StatCards latest={latest} />
+      <StatCards latest={cleanLatest} />
 
       {pollError && !errorMinimized && (
         <div

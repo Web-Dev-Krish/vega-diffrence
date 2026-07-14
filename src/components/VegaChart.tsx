@@ -32,8 +32,19 @@ function LegendRow() {
   )
 }
 
+// Vega for index options realistically stays well under a few hundred. Any
+// row outside this range is corrupt data (from the pre-fix bug, or a broker
+// glitch) — drop it from the chart entirely instead of letting it stretch
+// the Y-axis to the billions and flatten everything else into a straight line.
+const SANE_VEGA_LIMIT = 1000
+
 export default function VegaChart({ ticks }: { ticks: OptionTick[] }) {
-  const data = ticks.map((t) => ({
+  const clean = ticks.filter(
+    (t) => Math.abs(t.ce_vega) <= SANE_VEGA_LIMIT && Math.abs(t.pe_vega) <= SANE_VEGA_LIMIT
+  )
+  const droppedCount = ticks.length - clean.length
+
+  const data = clean.map((t) => ({
     time: formatMarketTime(t.created_at),
     ceVega: t.ce_vega,
     peVega: t.pe_vega,
@@ -50,6 +61,12 @@ export default function VegaChart({ ticks }: { ticks: OptionTick[] }) {
   return (
     <div style={{ width: '100%' }}>
       <LegendRow />
+      {droppedCount > 0 && (
+        <div style={{ fontSize: 11, color: '#f59e0b', marginBottom: 6 }}>
+          ⚠ {droppedCount} purane corrupt data point(s) chart se hide kiye gaye hain — DB se permanently
+          hatane ke liye <code>0004_clean_bad_vega.sql</code> migration run karo.
+        </div>
+      )}
       <div style={{ width: '100%', height: 320 }}>
         <ResponsiveContainer>
           <LineChart data={data} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
