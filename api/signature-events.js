@@ -8,24 +8,24 @@ export default async function handler(req, res) {
 
   try {
     if (req.method === 'GET') {
-      const { data, error } = await supabase.from('signature_events').select('*');
+      const { data, error } = await supabase.from('testimonials').select('*').order('id', { ascending: true });
       if (error) throw error;
       return res.status(200).json(data);
     }
     if (req.method === 'POST') {
-      const { data, error } = await supabase.from('signature_events').insert(req.body).select().single();
+      const { data, error } = await supabase.from('testimonials').insert(req.body).select().single();
       if (error) throw error;
       return res.status(201).json(data);
     }
     if (req.method === 'PUT') {
       const { id, ...updates } = req.body;
-      const { data, error } = await supabase.from('signature_events').update(updates).eq('id', id).select().single();
+      const { data, error } = await supabase.from('testimonials').update(updates).eq('id', id).select().single();
       if (error) throw error;
       return res.status(200).json(data);
     }
     if (req.method === 'DELETE') {
       const { id } = req.body;
-      const { error } = await supabase.from('signature_events').delete().eq('id', id);
+      const { error } = await supabase.from('testimonials').delete().eq('id', id);
       if (error) throw error;
       return res.status(200).json({ ok: true });
     }
