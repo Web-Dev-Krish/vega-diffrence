@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Outlet, Link, useLocation } from 'react-router-dom';
+import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
+import { supabase } from '../../lib/supabase';
 import { 
   LayoutDashboard, CalendarCheck, MapPin, PartyPopper, 
   Sparkles, UtensilsCrossed, FileText, Image as ImageIcon, 
@@ -26,6 +27,12 @@ const sidebarLinks = [
 export default function AdminLayout() {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    navigate('/admin/login');
+  };
 
   return (
     <div className="flex h-screen bg-[#0B0B0B] text-gray-300 font-sans">
@@ -72,7 +79,7 @@ export default function AdminLayout() {
         </div>
 
         <div className="p-4 border-t border-white/10">
-          <button className="flex items-center gap-3 px-4 py-3 w-full text-left text-sm text-red-400 hover:bg-red-500/10 rounded-lg transition-colors">
+          <button onClick={handleLogout} className="flex items-center gap-3 px-4 py-3 w-full text-left text-sm text-red-400 hover:bg-red-500/10 rounded-lg transition-colors">
             <LogOut size={18} />
             Logout
           </button>
