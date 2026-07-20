@@ -1,7 +1,36 @@
-import { defineConfig } from 'vite'
+import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
+import tailwindcss from '@tailwindcss/vite'
 
-export default defineConfig({
-  plugins: [react()],
-  server: { port: 5173 }
+// https://vite.dev/config/
+export default defineConfig(async ({ mode }) => {
+  const plugins = [react(), tailwindcss()];
+  try {
+    // @ts-ignore
+    const m = await import('./.vite-source-tags.js');
+    plugins.push(m.sourceTags());
+  } catch {}
+
+  const env = loadEnv(mode, process.cwd(), ['VITE_', 'NEXT_PUBLIC_']);
+  const processEnvDefines: Record<string, string> = {};
+  for (const [key, value] of Object.entries(env)) {
+    processEnvDefines[`process.env.${key}`] = JSON.stringify(value);
+  }
+
+  return {
+    plugins,
+    envPrefix: ['VITE_', 'NEXT_PUBLIC_'],
+    define: processEnvDefines,
+    build: {
+      chunkSizeWarningLimit: 700,
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            'lightweight-charts': ['lightweight-charts'],
+            vendor: ['react', 'react-dom', 'framer-motion', 'lucide-react'],
+          },
+        },
+      },
+    },
+  };
 })
