@@ -21,16 +21,5 @@ export default defineConfig(async ({ mode }) => {
     plugins,
     envPrefix: ['VITE_', 'NEXT_PUBLIC_'],
     define: processEnvDefines,
-    build: {
-      chunkSizeWarningLimit: 700,
-      rollupOptions: {
-        output: {
-          manualChunks: {
-            'lightweight-charts': ['lightweight-charts'],
-            vendor: ['react', 'react-dom', 'framer-motion', 'lucide-react'],
-          },
-        },
-      },
-    },
   };
 })
